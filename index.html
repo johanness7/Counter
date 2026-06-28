@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Counter</title>
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* Light Mode */
+            --bg-color: #F8F9FA;
+            --circle-bg: #EEF1F6;
+            --circle-shadow: inset 5px 5px 10px #D1D9E6, inset -5px -5px 10px #FFFFFF;
+            --text-color: #1A1D20;
+            --accent-color: #1A1D20; /* Akzentfarbe ist jetzt einfach die Textfarbe */
+            --key-active-bg: #DDE2EC; /* Neutraler Klick-Effekt für Tasten */
+            --menu-bg: rgba(255, 255, 255, 0.85);
+            --modal-overlay: rgba(0, 0, 0, 0.2);
+            --keyboard-bg: rgba(238, 241, 246, 0.95);
+            --key-bg: #FFFFFF;
+            --key-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            --transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode */
+            --bg-color: #0F1115;
+            --circle-bg: #161920;
+            --circle-shadow: inset 5px 5px 12px #090A0D, inset -3px -3px 8px #232833;
+            --text-color: #F3F4F6;
+            --accent-color: #F3F4F6; /* Akzentfarbe folgt auch hier dem Text */
+            --key-active-bg: #292F3D; /* Neutraler Klick-Effekt für Tasten im Dark Mode */
+            --menu-bg: rgba(22, 25, 32, 0.85);
+            --modal-overlay: rgba(0, 0, 0, 0.5);
+            --keyboard-bg: rgba(22, 25, 32, 0.95);
+            --key-bg: #1E232F;
+            --key-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        /* Header / Theme Toggle */
+        header {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            z-index: 10;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            border-radius: 16px;
+            transition: var(--transition);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.92);
+            background-color: var(--circle-bg);
+        }
+
+        .icon-btn span {
+            font-size: 28px;
+        }
+
+        /* Main Counter Circle */
+        .counter-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+        }
+
+        .counter-circle {
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background-color: var(--circle-bg);
+            box-shadow: var(--circle-shadow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .counter-circle:active {
+            transform: scale(0.96);
+        }
+
+        .counter-value {
+            font-size: 72px;
+            font-weight: 800;
+            letter-spacing: -2px;
+            color: var(--text-color);
+            pointer-events: none;
+        }
+
+        /* Dropdown Area */
+        .menu-container {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding: 0 24px;
+            z-index: 5;
+        }
+
+        .dropdown-menu {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            width: 100%;
+            max-width: 280px;
+            background: var(--menu-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            margin-bottom: 16px;
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .dropdown-menu.open {
+            max-height: 80px;
+            opacity: 1;
+            padding: 12px;
+        }
+
+        /* Modals & Overlays */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--modal-overlay);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: var(--menu-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            padding: 24px;
+            width: 85%;
+            max-width: 320px;
+            text-align: center;
+            transform: scale(0.9);
+            transition: var(--transition);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 16px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        /* Custom In-App Numpad */
+        .keyboard-overlay {
+            position: fixed;
+            bottom: -100%;
+            left: 0;
+            width: 100%;
+            background: var(--keyboard-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top-left-radius: 32px;
+            border-top-right-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+            transition: bottom 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 30;
+        }
+
+        .keyboard-overlay.open {
+            bottom: 0;
+        }
+
+        .keyboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 0 8px;
+        }
+
+        .keyboard-display {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--accent-color);
+        }
+
+        .keyboard-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+
+        .key {
+            background: var(--key-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 18px;
+            padding: 18px 0;
+            font-size: 22px;
+            font-weight: 600;
+            box-shadow: var(--key-shadow);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .key:active {
+            background: var(--key-active-bg);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <button class="icon-btn" id="theme-toggle" aria-label="Toggle Theme">
+            <span class="material-symbols-rounded">light_mode</span>
+        </button>
+    </header>
+
+    <div class="counter-container">
+        <div class="counter-circle" id="counter-click-area">
+            <div class="counter-value" id="counter-display">0</div>
+        </div>
+    </div>
+
+    <div class="menu-container">
+        <div class="dropdown-menu" id="dropdown-content">
+            <button class="icon-btn" id="sound-btn" title="Sound">
+                <span class="material-symbols-rounded">volume_up</span>
+            </button>
+            
+            <button class="icon-btn" id="open-keyboard-btn" title="Add Custom Value">
+                <span class="material-symbols-rounded">dialpad</span>
+            </button>
+            
+            <button class="icon-btn" id="minus-btn" title="Subtract One">
+                <span class="material-symbols-rounded">remove</span>
+            </button>
+
+            <button class="icon-btn" id="open-reset-modal" style="color: #EF4444;" title="Reset Counter">
+                <span class="material-symbols-rounded">restart_alt</span>
+            </button>
+        </div>
+
+        <button class="icon-btn" id="menu-toggle-btn" style="background-color: var(--circle-bg); box-shadow: var(--circle-shadow); border-radius: 50%; padding: 16px;">
+            <span class="material-symbols-rounded" id="menu-icon" style="transition: transform 0.3s;">expand_less</span>
+        </button>
+    </div>
+
+    <div class="modal-overlay" id="reset-modal">
+        <div class="modal-card">
+            <span class="material-symbols-rounded" style="font-size: 48px; color: #EF4444; margin-bottom: 12px;">warning</span>
+            <h3 style="font-size: 20px; font-weight: 800; margin-bottom: 8px;">Reset Counter?</h3>
+            <p style="font-size: 14px; opacity: 0.7;">Are you sure? Your current progress will be permanently lost.</p>
+            <div class="modal-actions">
+                <button class="modal-btn" id="cancel-reset" style="background: var(--circle-bg); color: var(--text-color);">Cancel</button>
+                <button class="modal-btn" id="confirm-reset" style="background: #EF4444; color: white;">Yes, Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="keyboard-overlay" id="custom-keyboard">
+        <div class="keyboard-header">
+            <button class="icon-btn" id="close-keyboard" style="padding: 4px;"><span class="material-symbols-rounded">close</span></button>
+            <div class="keyboard-display" id="keyboard-input-view">0</div>
+            <button class="icon-btn" id="submit-custom" style="padding: 4px;"><span class="material-symbols-rounded">check_circle</span></button>
+        </div>
+        <div class="keyboard-grid">
+            <button class="key" onclick="pressKey('1')">1</button>
+            <button class="key" onclick="pressKey('2')">2</button>
+            <button class="key" onclick="pressKey('3')">3</button>
+            <button class="key" onclick="pressKey('4')">4</button>
+            <button class="key" onclick="pressKey('5')">5</button>
+            <button class="key" onclick="pressKey('6')">6</button>
+            <button class="key" onclick="pressKey('7')">7</button>
+            <button class="key" onclick="pressKey('8')">8</button>
+            <button class="key" onclick="pressKey('9')">9</button>
+            <button class="key" style="color: #EF4444;" onclick="pressKey('clear')"><span class="material-symbols-rounded">backspace</span></button>
+            <button class="key" onclick="pressKey('0')">0</button>
+            <button class="key" style="visibility: hidden;"></button>
+        </div>
+    </div>
+
+    <script>
+        // State & LocalStorage Check
+        let count = parseInt(localStorage.getItem('counter_value')) || 0;
+        let soundEnabled = true;
+        let keyboardBuffer = "0";
+
+        // DOM Elements
+        const body = document.body;
+        const themeToggle = document.getElementById('theme-toggle');
+        const counterClickArea = document.getElementById('counter-click-area');
+        const counterDisplay = document.getElementById('counter-display');
+        const menuToggleBtn = document.getElementById('menu-toggle-btn');
+        const menuIcon = document.getElementById('menu-icon');
+        const dropdownContent = document.getElementById('dropdown-content');
+        
+        // Popups
+        const resetModal = document.getElementById('reset-modal');
+        const openResetModalBtn = document.getElementById('open-reset-modal');
+        const cancelReset = document.getElementById('cancel-reset');
+        const confirmReset = document.getElementById('confirm-reset');
+
+        const customKeyboard = document.getElementById('custom-keyboard');
+        const openKeyboardBtn = document.getElementById('open-keyboard-btn');
+        const closeKeyboard = document.getElementById('close-keyboard');
+        const keyboardInputView = document.getElementById('keyboard-input-view');
+        const submitCustom = document.getElementById('submit-custom');
+
+        const minusBtn = document.getElementById('minus-btn');
+        const soundBtn = document.getElementById('sound-btn');
+
+        // Audio & Haptik
+        const playClickSound = () => {
+            if (!soundEnabled) return;
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.08);
+        };
+
+        const triggerVibration = () => {
+            if (navigator.vibrate) navigator.vibrate(10);
+        };
+
+        const updateDisplay = () => {
+            counterDisplay.textContent = count;
+            localStorage.setItem('counter_value', count);
+        };
+
+        // Klick auf den Kreis
+        counterClickArea.addEventListener('click', () => {
+            count++;
+            updateDisplay();
+            playClickSound();
+            triggerVibration();
+        });
+
+        // Dropdown open/close
+        menuToggleBtn.addEventListener('click', () => {
+            dropdownContent.classList.toggle('open');
+            if (dropdownContent.classList.contains('open')) {
+                menuIcon.style.transform = 'rotate(180deg)';
+                menuIcon.textContent = 'expand_more';
+            } else {
+                menuIcon.style.transform = 'rotate(0deg)';
+                menuIcon.textContent = 'expand_less';
+            }
+        });
+
+        // Minus Button Action
+        minusBtn.addEventListener('click', () => {
+            if (count > 0) {
+                count--;
+                updateDisplay();
+                triggerVibration();
+            }
+        });
+
+        // Sound Toggle Action
+        soundBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundBtn.querySelector('span').textContent = soundEnabled ? 'volume_up' : 'volume_off';
+            triggerVibration();
+        });
+
+        // --- RESET LOGIK ---
+        openResetModalBtn.addEventListener('click', () => {
+            resetModal.classList.add('active');
+            triggerVibration();
+        });
+
+        cancelReset.addEventListener('click', () => {
+            resetModal.classList.remove('active');
+        });
+
+        confirmReset.addEventListener('click', () => {
+            count = 0;
+            updateDisplay();
+            resetModal.classList.remove('active');
+            dropdownContent.classList.remove('open');
+            menuIcon.style.transform = 'rotate(0deg)';
+            menuIcon.textContent = 'expand_less';
+            triggerVibration();
+        });
+
+        // --- CUSTOM KEYBOARD LOGIK ---
+        openKeyboardBtn.addEventListener('click', () => {
+            keyboardBuffer = "0";
+            keyboardInputView.textContent = keyboardBuffer;
+            customKeyboard.classList.add('open');
+            dropdownContent.classList.remove('open');
+            menuIcon.style.transform = 'rotate(0deg)';
+            menuIcon.textContent = 'expand_less';
+            triggerVibration();
+        });
+
+        closeKeyboard.addEventListener('click', () => {
+            customKeyboard.classList.remove('open');
+        });
+
+        window.pressKey = (key) => {
+            triggerVibration();
+            if (key === 'clear') {
+                if (keyboardBuffer.length > 1) {
+                    keyboardBuffer = keyboardBuffer.slice(0, -1);
+                } else {
+                    keyboardBuffer = "0";
+                }
+            } else {
+                if (keyboardBuffer === "0") {
+                    keyboardBuffer = key;
+                } else {
+                    if (keyboardBuffer.length < 5) {
+                        keyboardBuffer += key;
+                    }
+                }
+            }
+            keyboardInputView.textContent = keyboardBuffer;
+        };
+
+        submitCustom.addEventListener('click', () => {
+            const val = parseInt(keyboardBuffer);
+            if (!isNaN(val)) {
+                count += val;
+                updateDisplay();
+            }
+            customKeyboard.classList.remove('open');
+            triggerVibration();
+        });
+
+        // Theme Switcher Action
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = body.getAttribute('data-theme');
+            const themeIcon = themeToggle.querySelector('span');
+            
+            if (currentTheme === 'dark') {
+                body.removeAttribute('data-theme');
+                themeIcon.textContent = 'light_mode';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeIcon.textContent = 'dark_mode';
+            }
+            triggerVibration();
+        });
+
+        // Init beim Start
+        updateDisplay();
+    </script>
+</body>
+</html>
