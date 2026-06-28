@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Counter</title>
     
     <link rel="icon" type="image/png" href="logo.png">
@@ -17,8 +17,8 @@
             --circle-bg: #EEF1F6;
             --circle-shadow: inset 5px 5px 10px #D1D9E6, inset -5px -5px 10px #FFFFFF;
             --text-color: #1A1D20;
-            --accent-color: #1A1D20; /* Akzentfarbe ist jetzt einfach die Textfarbe */
-            --key-active-bg: #DDE2EC; /* Neutraler Klick-Effekt für Tasten */
+            --accent-color: #1A1D20;
+            --key-active-bg: #DDE2EC;
             --menu-bg: rgba(255, 255, 255, 0.85);
             --modal-overlay: rgba(0, 0, 0, 0.2);
             --keyboard-bg: rgba(238, 241, 246, 0.95);
@@ -33,8 +33,8 @@
             --circle-bg: #161920;
             --circle-shadow: inset 5px 5px 12px #090A0D, inset -3px -3px 8px #232833;
             --text-color: #F3F4F6;
-            --accent-color: #F3F4F6; /* Akzentfarbe folgt auch hier dem Text */
-            --key-active-bg: #292F3D; /* Neutraler Klick-Effekt für Tasten im Dark Mode */
+            --accent-color: #F3F4F6;
+            --key-active-bg: #292F3D;
             --menu-bg: rgba(22, 25, 32, 0.85);
             --modal-overlay: rgba(0, 0, 0, 0.5);
             --keyboard-bg: rgba(22, 25, 32, 0.95);
@@ -46,8 +46,10 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            /* Verhindert Markieren und iOS-Standard-Zoom auf Touch-Gesten */
             user-select: none;
             -webkit-user-select: none;
+            touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
@@ -94,13 +96,13 @@
             font-size: 28px;
         }
 
-        /* Main Counter Circle */
-        .counter-container {
+        /* Absolut zentrierter Counter-Bereich */
+        .main-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex-grow: 1;
+            position: relative;
         }
 
         .counter-circle {
@@ -113,12 +115,13 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            transition: var(--transition);
             border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.1s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        .counter-circle:active {
-            transform: scale(0.96);
+        /* Die cleane Klick-Animation */
+        .counter-circle.clicked {
+            transform: scale(0.95);
         }
 
         .counter-value {
@@ -127,18 +130,20 @@
             letter-spacing: -2px;
             color: var(--text-color);
             pointer-events: none;
+            transition: opacity 0.05s ease;
+        }
+        
+        .counter-value.flash {
+            opacity: 0.7;
         }
 
-        /* Dropdown Area */
-        .menu-container {
-            position: absolute;
-            bottom: 40px;
+        /* Dropdown Bereich direkt UNTER dem Kreis, öffnet nach UNTEN */
+        .dropdown-wrapper {
+            margin-top: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 100%;
-            padding: 0 24px;
-            z-index: 5;
+            width: 280px;
         }
 
         .dropdown-menu {
@@ -146,24 +151,26 @@
             overflow: hidden;
             opacity: 0;
             width: 100%;
-            max-width: 280px;
             background: var(--menu-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 24px;
-            margin-bottom: 16px;
+            margin-top: 0;
             transition: var(--transition);
             display: flex;
             justify-content: space-around;
             align-items: center;
             padding: 0;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.00);
         }
 
+        /* Gleitet elegant nach unten auf */
         .dropdown-menu.open {
             max-height: 80px;
             opacity: 1;
             padding: 12px;
+            margin-top: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         /* Modals & Overlays */
@@ -224,7 +231,7 @@
             transition: var(--transition);
         }
 
-        /* Custom In-App Numpad */
+        /* Custom In-App Numpad Slider von unten */
         .keyboard-overlay {
             position: fixed;
             bottom: -100%;
@@ -297,34 +304,37 @@
         </button>
     </header>
 
-    <div class="counter-container">
+    <div class="main-wrapper">
+        
         <div class="counter-circle" id="counter-click-area">
             <div class="counter-value" id="counter-display">0</div>
         </div>
-    </div>
 
-    <div class="menu-container">
-        <div class="dropdown-menu" id="dropdown-content">
-            <button class="icon-btn" id="sound-btn" title="Sound">
-                <span class="material-symbols-rounded">volume_up</span>
-            </button>
+        <div class="dropdown-wrapper">
             
-            <button class="icon-btn" id="open-keyboard-btn" title="Add Custom Value">
-                <span class="material-symbols-rounded">dialpad</span>
-            </button>
-            
-            <button class="icon-btn" id="minus-btn" title="Subtract One">
-                <span class="material-symbols-rounded">remove</span>
+            <button class="icon-btn" id="menu-toggle-btn" style="background-color: var(--circle-bg); box-shadow: var(--circle-shadow); border-radius: 50%; padding: 16px;">
+                <span class="material-symbols-rounded" id="menu-icon" style="transition: transform 0.3s;">expand_more</span>
             </button>
 
-            <button class="icon-btn" id="open-reset-modal" style="color: #EF4444;" title="Reset Counter">
-                <span class="material-symbols-rounded">restart_alt</span>
-            </button>
+            <div class="dropdown-menu" id="dropdown-content">
+                <button class="icon-btn" id="sound-btn" title="Sound">
+                    <span class="material-symbols-rounded">volume_up</span>
+                </button>
+                
+                <button class="icon-btn" id="open-keyboard-btn" title="Add Custom Value">
+                    <span class="material-symbols-rounded">dialpad</span>
+                </button>
+                
+                <button class="icon-btn" id="minus-btn" title="Subtract One">
+                    <span class="material-symbols-rounded">remove</span>
+                </button>
+
+                <button class="icon-btn" id="open-reset-modal" style="color: #EF4444;" title="Reset Counter">
+                    <span class="material-symbols-rounded">restart_alt</span>
+                </button>
+            </div>
+            
         </div>
-
-        <button class="icon-btn" id="menu-toggle-btn" style="background-color: var(--circle-bg); box-shadow: var(--circle-shadow); border-radius: 50%; padding: 16px;">
-            <span class="material-symbols-rounded" id="menu-icon" style="transition: transform 0.3s;">expand_less</span>
-        </button>
     </div>
 
     <div class="modal-overlay" id="reset-modal">
@@ -417,23 +427,34 @@
             localStorage.setItem('counter_value', count);
         };
 
-        // Klick auf den Kreis
+        // Klick auf den Kreis mit neuen Animationen
         counterClickArea.addEventListener('click', () => {
             count++;
+            
+            // Animationen triggern
+            counterClickArea.classList.add('clicked');
+            counterDisplay.classList.add('flash');
+            
+            setTimeout(() => {
+                counterClickArea.classList.remove('clicked');
+            }, 100);
+            
+            setTimeout(() => {
+                counterDisplay.classList.remove('flash');
+            }, 50);
+
             updateDisplay();
             playClickSound();
             triggerVibration();
         });
 
-        // Dropdown open/close
+        // Dropdown open/close nach unten aufgleitend
         menuToggleBtn.addEventListener('click', () => {
             dropdownContent.classList.toggle('open');
             if (dropdownContent.classList.contains('open')) {
                 menuIcon.style.transform = 'rotate(180deg)';
-                menuIcon.textContent = 'expand_more';
             } else {
                 menuIcon.style.transform = 'rotate(0deg)';
-                menuIcon.textContent = 'expand_less';
             }
         });
 
@@ -469,7 +490,6 @@
             resetModal.classList.remove('active');
             dropdownContent.classList.remove('open');
             menuIcon.style.transform = 'rotate(0deg)';
-            menuIcon.textContent = 'expand_less';
             triggerVibration();
         });
 
@@ -480,7 +500,6 @@
             customKeyboard.classList.add('open');
             dropdownContent.classList.remove('open');
             menuIcon.style.transform = 'rotate(0deg)';
-            menuIcon.textContent = 'expand_less';
             triggerVibration();
         });
 
