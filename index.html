@@ -48,7 +48,7 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: manipulation;
+            touch-action: none; /* Blockiert jegliche Standard-Gesten (kein Pinch-Zoom, kein Scroll) */
             -webkit-tap-highlight-color: transparent;
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
@@ -56,13 +56,12 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            height: 100vh;
-            /* Nutzt CSS Grid für unzerstörbare Zentrierung auf Mobilgeräten */
-            display: grid;
-            grid-template-rows: auto 1fr;
+            height: 100dvh; /* Nutzt die dynamische Ansichtshöhe für Handys */
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
             transition: var(--transition);
-            padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* Sicherer Header für Handy-Notches */
@@ -84,27 +83,26 @@
             justify-content: center;
             padding: 12px;
             border-radius: 16px;
-            transition: var(--transition);
+            transition: transform 0.1s;
         }
 
         .icon-btn:active {
             transform: scale(0.92);
-            background-color: var(--circle-bg);
         }
 
         .icon-btn span {
             font-size: 28px;
         }
 
-        /* Der perfekt zentrierte Container */
+        /* Unzerstörbare zentrierte Box auf dem Display */
         .content-body {
+            flex-grow: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             width: 100%;
-            padding: 0 24px;
-            transform: translateY(-20px); /* Leicht angehoben für optische Symmetrie am Handy */
+            margin-top: -40px; /* Gleicht optisch den Header oben perfekt aus */
         }
 
         .main-wrapper {
@@ -125,11 +123,8 @@
             align-items: center;
             cursor: pointer;
             border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: transform 0.1s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        .counter-circle.clicked {
-            transform: scale(0.95);
+            /* Transform wird jetzt blitzschnell via JS gesteuert */
+            transition: transform 0.05s linear, opacity 0.05s linear;
         }
 
         .counter-value {
@@ -138,16 +133,11 @@
             letter-spacing: -2px;
             color: var(--text-color);
             pointer-events: none;
-            transition: opacity 0.05s ease;
-        }
-        
-        .counter-value.flash {
-            opacity: 0.7;
         }
 
-        /* Dropdown weicht jetzt sauber nach unten ab */
+        /* Dropdown Bereich weicht nach unten ab */
         .dropdown-wrapper {
-            margin-top: 24px;
+            margin-top: 30px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -163,7 +153,6 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             border-radius: 24px;
-            margin-top: 0;
             transition: var(--transition);
             display: flex;
             justify-content: space-around;
@@ -234,7 +223,6 @@
             border: none;
             font-weight: 600;
             cursor: pointer;
-            transition: var(--transition);
         }
 
         /* Keyboard Slider */
@@ -294,11 +282,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: var(--transition);
-        }
-
-        .key:active {
-            background: var(--key-active-bg);
         }
     </style>
 </head>
@@ -363,17 +346,17 @@
             <button class="icon-btn" id="submit-custom" style="padding: 4px;"><span class="material-symbols-rounded">check_circle</span></button>
         </div>
         <div class="keyboard-grid">
-            <button class="key" onclick="pressKey('1')">1</button>
-            <button class="key" onclick="pressKey('2')">2</button>
-            <button class="key" onclick="pressKey('3')">3</button>
-            <button class="key" onclick="pressKey('4')">4</button>
-            <button class="key" onclick="pressKey('5')">5</button>
-            <button class="key" onclick="pressKey('6')">6</button>
-            <button class="key" onclick="pressKey('7')">7</button>
-            <button class="key" onclick="pressKey('8')">8</button>
-            <button class="key" onclick="pressKey('9')">9</button>
-            <button class="key" style="color: #EF4444;" onclick="pressKey('clear')"><span class="material-symbols-rounded">backspace</span></button>
-            <button class="key" onclick="pressKey('0')">0</button>
+            <button class="key" ontouchstart="pressKey('1')">1</button>
+            <button class="key" ontouchstart="pressKey('2')">2</button>
+            <button class="key" ontouchstart="pressKey('3')">3</button>
+            <button class="key" ontouchstart="pressKey('4')">4</button>
+            <button class="key" ontouchstart="pressKey('5')">5</button>
+            <button class="key" ontouchstart="pressKey('6')">6</button>
+            <button class="key" ontouchstart="pressKey('7')">7</button>
+            <button class="key" ontouchstart="pressKey('8')">8</button>
+            <button class="key" ontouchstart="pressKey('9')">9</button>
+            <button class="key" style="color: #EF4444;" ontouchstart="pressKey('clear')"><span class="material-symbols-rounded">backspace</span></button>
+            <button class="key" ontouchstart="pressKey('0')">0</button>
             <button class="key" style="visibility: hidden;"></button>
         </div>
     </div>
@@ -430,20 +413,26 @@
             localStorage.setItem('counter_value', count);
         };
 
-        counterClickArea.addEventListener('click', () => {
+        // Ultraschneller Touchstart Trigger fürs Handy (0ms Verzögerung)
+        counterClickArea.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Stoppt jegliche iOS-Gesten & Zoom
             count++;
             
-            counterClickArea.classList.add('clicked');
-            counterDisplay.classList.add('flash');
-            
-            setTimeout(() => counterClickArea.classList.remove('clicked'), 100);
-            setTimeout(() => counterDisplay.classList.remove('flash'), 50);
+            // Sofortige, ruckelfreie Skalierung per JS
+            counterClickArea.style.transform = 'scale(0.94)';
+            counterClickArea.style.opacity = '0.8';
 
             updateDisplay();
             playClickSound();
             triggerVibration();
         });
 
+        counterClickArea.addEventListener('touchend', () => {
+            counterClickArea.style.transform = 'scale(1)';
+            counterClickArea.style.opacity = '1';
+        });
+
+        // Dropdown Click-Handler
         menuToggleBtn.addEventListener('click', () => {
             dropdownContent.classList.toggle('open');
             if (dropdownContent.classList.contains('open')) {
@@ -467,6 +456,7 @@
             triggerVibration();
         });
 
+        // Modals & Keyboard Events
         openResetModalBtn.addEventListener('click', () => {
             resetModal.classList.add('active');
             triggerVibration();
