@@ -48,7 +48,7 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: none; /* Blockiert jegliche Standard-Gesten (kein Pinch-Zoom, kein Scroll) */
+            touch-action: none;
             -webkit-tap-highlight-color: transparent;
             font-family: 'Plus Jakarta Sans', sans-serif;
         }
@@ -56,7 +56,7 @@
         body {
             background-color: var(--bg-color);
             color: var(--text-color);
-            height: 100dvh; /* Nutzt die dynamische Ansichtshöhe für Handys */
+            height: 100dvh;
             width: 100vw;
             display: flex;
             flex-direction: column;
@@ -102,7 +102,7 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            margin-top: -40px; /* Gleicht optisch den Header oben perfekt aus */
+            margin-top: -40px;
         }
 
         .main-wrapper {
@@ -123,7 +123,6 @@
             align-items: center;
             cursor: pointer;
             border: 1px solid rgba(255, 255, 255, 0.05);
-            /* Transform wird jetzt blitzschnell via JS gesteuert */
             transition: transform 0.05s linear, opacity 0.05s linear;
         }
 
@@ -135,7 +134,7 @@
             pointer-events: none;
         }
 
-        /* Dropdown Bereich weicht nach unten ab */
+        /* Dropdown Bereich */
         .dropdown-wrapper {
             margin-top: 30px;
             display: flex;
@@ -362,8 +361,11 @@
     </div>
 
     <script>
+        // State & LocalStorage Laden (inklusive Fallbacks)
         let count = parseInt(localStorage.getItem('counter_value')) || 0;
-        let soundEnabled = true;
+        let soundEnabled = localStorage.getItem('counter_sound') !== 'false'; // Standardmäßig true
+        let currentTheme = localStorage.getItem('counter_theme') || 'light';
+
         let keyboardBuffer = "0";
 
         const body = document.body;
@@ -387,6 +389,24 @@
 
         const minusBtn = document.getElementById('minus-btn');
         const soundBtn = document.getElementById('sound-btn');
+
+        // Funktion zum Initialisieren der gespeicherten Einstellungen beim Start
+        const initSavedSettings = () => {
+            // Theme anwenden
+            if (currentTheme === 'dark') {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.querySelector('span').textContent = 'dark_mode';
+            } else {
+                body.removeAttribute('data-theme');
+                themeToggle.querySelector('span').textContent = 'light_mode';
+            }
+
+            // Sound-Icon anwenden
+            soundBtn.querySelector('span').textContent = soundEnabled ? 'volume_up' : 'volume_off';
+
+            // Display laden
+            updateDisplay();
+        };
 
         const playClickSound = () => {
             if (!soundEnabled) return;
@@ -413,12 +433,11 @@
             localStorage.setItem('counter_value', count);
         };
 
-        // Ultraschneller Touchstart Trigger fürs Handy (0ms Verzögerung)
+        // Klick auf den Kreis
         counterClickArea.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Stoppt jegliche iOS-Gesten & Zoom
+            e.preventDefault();
             count++;
             
-            // Sofortige, ruckelfreie Skalierung per JS
             counterClickArea.style.transform = 'scale(0.94)';
             counterClickArea.style.opacity = '0.8';
 
@@ -450,13 +469,15 @@
             }
         });
 
+        // Sound stummschalten & Speichern
         soundBtn.addEventListener('click', () => {
             soundEnabled = !soundEnabled;
+            localStorage.setItem('counter_sound', soundEnabled);
             soundBtn.querySelector('span').textContent = soundEnabled ? 'volume_up' : 'volume_off';
             triggerVibration();
         });
 
-        // Modals & Keyboard Events
+        // Modals & Keyboard
         openResetModalBtn.addEventListener('click', () => {
             resetModal.classList.add('active');
             triggerVibration();
@@ -514,21 +535,25 @@
             triggerVibration();
         });
 
+        // Theme Switcher & Speichern
         themeToggle.addEventListener('click', () => {
-            const currentTheme = body.getAttribute('data-theme');
+            const isDark = body.getAttribute('data-theme') === 'dark';
             const themeIcon = themeToggle.querySelector('span');
             
-            if (currentTheme === 'dark') {
+            if (isDark) {
                 body.removeAttribute('data-theme');
                 themeIcon.textContent = 'light_mode';
+                localStorage.setItem('counter_theme', 'light');
             } else {
                 body.setAttribute('data-theme', 'dark');
                 themeIcon.textContent = 'dark_mode';
+                localStorage.setItem('counter_theme', 'dark');
             }
             triggerVibration();
         });
 
-        updateDisplay();
+        // Einstellungen beim Starten laden
+        initSavedSettings();
     </script>
 </body>
 </html>
